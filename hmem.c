@@ -17,7 +17,7 @@
 
 static nu_free_cell* nu_free_list = 0;
 
-pthread_mutex_t mutex;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int64_t
 nu_free_list_length()
@@ -71,7 +71,7 @@ nu_free_list_insert(nu_free_cell* cell)
     }
 
     nu_free_cell* pp = nu_free_list;
-
+    
     while (pp->next != 0 && ((uint64_t)pp->next) < ((uint64_t) cell)) {
         pp = pp->next;
     }
@@ -170,9 +170,18 @@ hfree(void* addr)
 void*
 hrealloc(void* prev, size_t bytes) {
     
-    void* newBlock = hmalloc(bytes);
-    newBlock = memcpy(newBlock, prev, bytes);
+    //int64_t size = (int64_t) bytes;
+
+    // space for size
+    //int64_t alloc_size = size + sizeof(int64_t);
+    
+    void* ptr = hmalloc(bytes);
+    //ptr = ptr - (void*) sizeof(int64_t);
+    memcpy(ptr, prev, bytes);
     hfree(prev);
-    return newBlock;
+    return ptr;
+    
+    //*((int64_t*)ptr) = alloc_size;
+    //return ((void*)ptr) + sizeof(int64_t);
 }
 
