@@ -7,7 +7,7 @@ HDRS := $(wildcard *.h)
 SRCS := $(wildcard *.c)
 OBJS := $(SRCS:.c=.o)
 
-CFLAGS := -g
+CFLAGS := -g -std=gnu99
 LDLIBS := -lpthread
 
 all: $(BINS)
@@ -24,10 +24,10 @@ collatz-list-hw7: list_main.o hw07_malloc.o hmem.o
 collatz-ivec-hw7: ivec_main.o hw07_malloc.o hmem.o
 	gcc $(CFLAGS) -o $@ $^ $(LDLIBS)
 
-collatz-list-par: list_main.o par_malloc.o hmem.o
+collatz-list-par: list_main.o par_malloc.o
 	gcc $(CFLAGS) -o $@ $^ $(LDLIBS)
 
-collatz-ivec-par: ivec_main.o par_malloc.o hmem.o
+collatz-ivec-par: ivec_main.o par_malloc.o
 	gcc $(CFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o : %.c $(HDRS) Makefile

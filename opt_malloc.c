@@ -10,8 +10,7 @@
 #include <math.h>
 #include <stdbool.h>
 
-#include "opt_alloc.h"
-#include "hmem.h"
+#include "opt_malloc.h"
 
 //typedef struct node {
 //	bool free;
@@ -20,7 +19,7 @@
 //	struct node * prev;
 //} node;
 
-__thread node* bins[8];
+__thread node* bins[8] = {0};
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -45,6 +44,25 @@ init_bins()
         }
         base++;
     }
+    print_bins(bins);
+}
+
+void
+print_bins() 
+{
+    printf("====BIN READOUT====\n");
+    node* bins_copy = bins;
+    for (int i = 0; i < 8; i++) {
+        node* head = &bins_copy[i];
+        printf("BIN SIZE = %d\n", pow(2, i + 5));
+        int c = 0;
+        while (head->next != NULL) {
+            printf("Node %f\n", c);
+            printf("Free %s\n", head->free ? "true" : "false");
+            head = head->next;
+            c++;
+        }
+    }
 }
 
 void
@@ -64,6 +82,10 @@ insert_node(node* head, node* child) {
 void*
 opt_malloc(size_t usize)
 {
+    if (bins == 0) {
+        init_bins();
+    }
+    
     int alloc_size = (int) usize + sizeof(node);
     // sizeof(size_t)?
     
@@ -120,7 +142,7 @@ opt_malloc(size_t usize)
 }
 
 void set_free(void* addr) {
-    for (int i = 0; i < sizeof(bins); i++) {
+    for (int i = 0; i < 8; i++) {
         node* h = bins[i];
         while ((h->next != (node*) addr) && (h->next != NULL)) {
             h = h->next;
@@ -200,24 +222,6 @@ find_empty_bin(int size)
         }
     }
     return (node*) 0xDEADBEEF;
-}
-
-void*
-opt_realloc(void* prev, size_t bytes) {
-    
-    //int64_t size = (int64_t) bytes;
-
-    // space for size
-    //int64_t alloc_size = size + sizeof(int64_t);
-    
-    void* ptr = hmalloc(bytes);
-    //ptr = ptr - (void*) sizeof(int64_t);
-    memcpy(ptr, prev, bytes);
-    hfree(prev);
-    return ptr;
-    
-    //*((int64_t*)ptr) = alloc_size;
-    //return ((void*)ptr) + sizeof(int64_t);
 }
 
 int pow_of_two(int num) {

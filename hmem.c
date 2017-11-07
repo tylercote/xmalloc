@@ -79,7 +79,10 @@ nu_free_list_insert(nu_free_cell* cell)
     cell->next = pp->next;
     pp->next = cell;
 
+    pthread_mutex_lock(&mutex);
     nu_free_list_coalesce();
+    pthread_mutex_unlock(&mutex);
+
 }
 
 static
