@@ -26,6 +26,7 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 void
 init_bins()
 {
+    printf("Enter init_bins\n");
     int base = 5; // bins start at 32 bytes -> 4096 bytes
     for (int i = 0; i < 8; i++) {
         int bin_size = pow(2, base);
@@ -67,7 +68,7 @@ print_bins()
 
 void
 insert_node(node* head, node* child) {
-
+    printf("Enter insert_node\n");
     // adjust the size of the head node
     head->size = head->size - child->size;
     
@@ -82,8 +83,14 @@ insert_node(node* head, node* child) {
 void*
 opt_malloc(size_t usize)
 {
-    if (bins == 0) {
+    printf("Enter opt_malloc\n");
+    if (bins[0] == NULL) {
+        printf("Bins initialized\n");
         init_bins();
+        print_bins();
+    }
+    else {
+        printf("Bins initialized already\n");
     }
     
     int alloc_size = (int) usize + sizeof(node);
@@ -105,6 +112,7 @@ opt_malloc(size_t usize)
         alloc_size = CELL_SIZE;
     }
     
+    printf("Before finding empty bin\n");
     pthread_mutex_lock(&mutex);
     node* empty_bin = find_empty_bin((int) usize);
     pthread_mutex_unlock(&mutex);
