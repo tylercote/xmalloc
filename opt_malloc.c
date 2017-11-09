@@ -20,8 +20,8 @@
 //} node;
 
 __thread node* bins[8] = {0};
+__thread node* headx = NULL;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
 
 void
 init_bins()
@@ -34,33 +34,53 @@ init_bins()
         node* start = mmap(NULL, 4096,	PROT_READ|PROT_WRITE, MAP_ANON|MAP_PRIVATE, -1, 0);
         start->next = NULL;
         start->prev = NULL;
-        start->free = true;
+        start->free = false;
         //start->size = 4096 - sizeof(node);
-        bins[i] = start;
         void* ptr = (void*) start;
-        //node* prevNode = start;
-        for (int c = 0; c < (4096 / bin_size); c++) {
+        for (int c = 0; c < (4096 / bin_size) + 1; c++) {
             printf("**bin num: %d\n", c);
             //node* child = ((void*) bins[i]) - bin_size;
+            node* prev_node = (node*) ptr;
             ptr += bin_size;
             node* child = (node*) ptr;
+            child->next = NULL;
+            child->prev = prev_node;
+            prev_node->next = child;
+            //if (start->next == NULL) {
+            //    printf("STILL NULL\n");
+            //}
+            //insert_node(bins[i], child); // fixers prev and next
             //child->next = NULL;
-            //child->prev = prevNode;
-            insert_node(bins[i], child); // fixers prev and next
-            //child->next = NULL;
-            child->size = 32 - sizeof(node);
+            child->size = 32;
             child->free = true;
-            //prevNode->next = child;
-            //prevNode = child;
-            printf("This: %s\n", child);
-            printf("Prev: %s\n", child->prev); 
-            printf("Next: %s\n", child->next);
-            printf("Free: %s\n", child->free ? "true" : "false");
         }
+        bins[i] = start;
         base++;
     }
     printf("Finished init_bins\n");
     //print_bins(bins);
+}
+
+void
+init_bin()
+{
+    node* h = headx;
+    h = mmap(NULL, 4096,	PROT_READ|PROT_WRITE, MAP_ANON|MAP_PRIVATE, -1, 0);
+    h->next = NULL;
+    h->size = 4096 - sizeof(node);
+    for(int i = 0; i < 128; i++) {
+        while(h != NULL) {
+            h = h->next;
+        }
+        if (h->next == NULL) {
+            node* c = (void*) h - 32;
+            c->next = NULL;
+            c->size = h->size - 32 - sizeof(node);
+            h->next = c;
+        }
+        
+    }
+    printf("node added");
 }
 
 void
@@ -69,17 +89,30 @@ print_bins()
     printf("====BIN READOUT====\n");
     //node* bins_copy = bins;
     for (int i = 0; i < 8; i++) {
-        node* currNode = bins[i];
+        node* head = bins[i];
         double bin_size = pow(2, i + 5);
         printf("BIN SIZE = %f\n", bin_size);
         int c = 0;
-        while (currNode->next != NULL) {
+        while (head->next != NULL) {
             printf("Node: %d\n", c);
-            printf("Free: %s\n", currNode->free ? "true" : "false");
-            currNode = currNode->next;
+            printf("Free: %s\n", head->free ? "true" : "false");
             c++;
+            head = head->next;
         }
     }
+}
+
+void
+count_bins()
+{
+        node* h = headx;
+        int c = 0;
+        while (h->next != NULL) {
+            c++;
+            h = h->next;
+            printf("%i\n", c);
+        }
+        printf("add one to c");
 }
 
 void
@@ -88,13 +121,13 @@ insert_node(node* head, node* child) {
     // adjust the size of the head node
     
     head->size = head->size - child->size;
-    
-    while (head->next != NULL) {
-        head = head->next;
+    node* temp = head;
+    while (temp->next != NULL) {
+        temp = temp->next;
     }
     
-    head->next = child;
-    child->prev = head;
+    temp->next = child;
+    child->prev = temp;
     child->next = NULL;
 }
 
@@ -103,9 +136,10 @@ opt_malloc(size_t usize)
 {
     printf("Enter opt_malloc\n");
     if (bins[0] == NULL) {
-        init_bins();
+        init_bin();
         printf("Bins initialized\n");
-        print_bins();
+        //count_bins();
+        //print_bins();
     }
     else {
         printf("Bins initialized already\n");
